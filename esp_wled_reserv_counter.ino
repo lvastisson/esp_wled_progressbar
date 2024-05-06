@@ -57,20 +57,22 @@ const char* wifi_network_password = "ainidergb";
 const char* soft_ap_ssid = "testif";
 const char* soft_ap_password = "amogus123";
 
-String serverName = "http://4.3.2.1:80/json/state";
+String wled_api = "http://4.3.2.1:80/json/state";
+String wled_sync = "http://4.3.2.1:80/win&ST=";
 
 AsyncWebServer server(80);
 
 char buffer[1170];
 
 unsigned long lastTime = 0;
-unsigned long timerDelayMs = 3000;
+unsigned long timerDelayMs = 15000;
 
 unsigned long starttime = millis() / 1000;
 unsigned long localtimee = starttime;
 
 const short ledcount = 300;
-unsigned long counterstart = 1714998503;
+short currled = 0;
+unsigned long counterstart = 1715001174;
 unsigned long reserv = 1715003400;
 unsigned long start_to_reserv_diff = reserv - counterstart;
 
@@ -92,7 +94,7 @@ long led_progress() {
 void setup() {
   Serial.begin(115200);
 
-  time_set(1714999288);
+  time_set(1715001174);
 
   WiFi.mode(WIFI_MODE_APSTA);
   WiFi.softAP(soft_ap_ssid, soft_ap_password);
@@ -128,6 +130,22 @@ void setup() {
       inputMessage = request->getParam("t")->value();
       inputParam ="t";
       time_set(strtoul(inputMessage.c_str(), NULL, 10));
+
+      HTTPClient http;
+      String wled_sync_path = wled_sync + time_get();
+      http.begin(wled_sync_path.c_str());
+      int httpResponseCode = http.GET();
+
+      if (httpResponseCode > 0) {
+        Serial.print("(WLED sync) HTTP Response code: ");
+        Serial.println(httpResponseCode);
+        String payload = http.getString();
+        Serial.println(payload);
+      } else {
+        Serial.print("(WLED sync) Error code: ");
+        Serial.println(httpResponseCode);
+      }
+      http.end();
     }
     else {
       inputMessage = "No message sent";
@@ -146,6 +164,7 @@ void setup() {
       inputMessage = request->getParam("t")->value();
       inputParam ="t";
       reserv = strtoul(inputMessage.c_str(), NULL, 10);
+      currled = 0;
     }
     else {
       inputMessage = "No message sent";
@@ -162,20 +181,21 @@ void setup() {
 
 void loop() {
 
-  if ((millis() - lastTime) > timerDelayMs) {
+  if (currled < ledcount && (millis() - lastTime) > timerDelayMs) {
     if (WiFi.status() == WL_CONNECTED) {
+      neopixelWrite(NEOPIXEL,0,RGB_BRIGHTNESS,0); // Green
       HTTPClient http;
 
-      http.begin(serverName.c_str());
+      http.begin(wled_api.c_str());
       http.addHeader("Content-Type", "application/json");
 
 
       short curr_progress = led_progress();
       Serial.print("Set progress to n-th led: ");
       Serial.println(curr_progress);
-      // compile string template
-      snprintf(buffer, 1170, "{\"on\":true,\"bri\":255,\"transition\":7,\"mainseg\":1,\"seg\":[{\"id\":0,\"start\":0,\"stop\":300,\"grp\":1,\"spc\":0,\"of\":0,\"on\":true,\"frz\":false,\"bri\":255,\"cct\":127,\"set\":0,\"n\":\"\",\"col\":[[255,160,0],[0,0,0],[0,0,0]],\"fx\":106,\"sx\":0,\"ix\":255,\"pal\":18,\"c1\":128,\"c2\":128,\"c3\":16,\"sel\":false,\"rev\":false,\"mi\":false,\"o1\":false,\"o2\":false,\"o3\":false,\"si\":0,\"m12\":0},{\"id\":1,\"start\":0,\"stop\":%d,\"grp\":1,\"spc\":0,\"of\":0,\"on\":true,\"frz\":false,\"bri\":255,\"cct\":127,\"set\":0,\"n\":\"Bar\",\"col\":[[100,255,38],[0,0,0],[0,0,0]],\"fx\":0,\"sx\":128,\"ix\":128,\"pal\":0,\"c1\":128,\"c2\":128,\"c3\":16,\"sel\":true,\"rev\":false,\"mi\":false,\"o1\":false,\"o2\":false,\"o3\":false,\"si\":0,\"m12\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0}]}", curr_progress);
 
+      // compile string template
+      snprintf(buffer, 1170, "{\"on\":true,\"bri\":255,\"transition\":7,\"tt\":50,\"mainseg\":0,\"seg\":[{\"id\":0,\"start\":%d,\"stop\":300,\"grp\":1,\"spc\":0,\"of\":0,\"on\":true,\"frz\":false,\"bri\":255,\"cct\":127,\"set\":0,\"n\":\"\",\"col\":[[255,160,0],[0,0,0],[0,0,0]],\"fx\":106,\"sx\":0,\"ix\":255,\"pal\":18,\"c1\":128,\"c2\":128,\"c3\":16,\"sel\":false,\"rev\":false,\"mi\":false,\"o1\":false,\"o2\":false,\"o3\":false,\"si\":0,\"m12\":0},{\"id\":1,\"start\":0,\"stop\":%d,\"grp\":1,\"spc\":0,\"of\":0,\"on\":true,\"frz\":false,\"bri\":194,\"cct\":127,\"set\":0,\"n\":\"\",\"col\":[[0,255,64],[69,255,13],[179,255,0]],\"fx\":67,\"sx\":15,\"ix\":255,\"pal\":4,\"c1\":128,\"c2\":128,\"c3\":16,\"sel\":true,\"rev\":true,\"mi\":false,\"o1\":false,\"o2\":false,\"o3\":false,\"si\":0,\"m12\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0},{\"stop\":0}]}", curr_progress, curr_progress);
       // Send HTTP POST request
       int httpResponseCode = http.POST(String(buffer));
 
@@ -192,6 +212,16 @@ void loop() {
 
       // Free resources
       http.end();
+
+      currled = curr_progress;
+    } else {
+      neopixelWrite(NEOPIXEL,RGB_BRIGHTNESS,0,0); // Red
+      delay(250);
+      neopixelWrite(NEOPIXEL,0,0,0); // Off / black
+      delay(250);
+      Serial.println("Reconnecting to WiFi...");
+      WiFi.disconnect();
+      WiFi.reconnect();
     }
     lastTime = millis();
   }
