@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <div>
+    <input type="number" name="reserv" id="reserv">
+    <button onclick="setReserv()">Update reserv time</button>
+  </div>
+  <div>
+    <button onclick="syncTime()">Sync time</button>
+  </div>
+</body>
+<script>
+  const syncTime = () => {
+    const utcnow = Math.round(Date.now() / 1000);
+
+    fetch(`/sync&t=${utcnow}`).then(function(response) {
+      return response.json();
+    }).then(function(data) {
+      console.log(data);
+    }).catch(function(err) {
+      console.log('Fetch Error: ', err);
+    });
+  }
+
+  const setReserv = () => {
+    const reserv = parseInt(document.querySelector('input#reserv').value);
+
+    fetch(`/set&t=${reserv}`).then(function(response) {
+      return response.json();
+    }).then(function(data) {
+      console.log(data);
+    }).catch(function(err) {
+      console.log('Fetch Error: ', err);
+    });
+  }
+</script>
+</html>
