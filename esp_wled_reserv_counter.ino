@@ -83,11 +83,6 @@ unsigned long time_get() {
 }
 double reservini_progress() {
   double curr_timee = time_get();
-  // Serial.println(curr_timee);
-  // Serial.println(start_to_reserv_diff);
-  // Serial.println((double)reserv - curr_timee);
-  // Serial.println((double)start_to_reserv_diff * (double)100);
-  // Serial.println((((double)reserv - curr_timee) / (double)start_to_reserv_diff * (double)100));
   return 100 - (((double)reserv - curr_timee) / (double)start_to_reserv_diff * (double)100);
 }
 long led_progress() {
@@ -132,9 +127,6 @@ void setup() {
     if (request->hasParam("t")) {
       inputMessage = request->getParam("t")->value();
       inputParam ="t";
-      Serial.println("/set api:");
-      Serial.println(inputMessage.c_str());
-      Serial.println(strtoul(inputMessage.c_str(), NULL, 10));
       time_set(strtoul(inputMessage.c_str(), NULL, 10));
     }
     else {
@@ -142,7 +134,7 @@ void setup() {
       inputParam = "none";
     }
     Serial.println(inputMessage);
-    request->send(200, "text/plain", "HTTP GET request sent to your ESP on input field (" + inputParam + ") with value: " + inputMessage);
+    request->send(200, "text/plain", "HTTP GET /sync request sent to your ESP on input field (" + inputParam + ") with value: " + inputMessage);
   });
 
   // reserv deadline set endpoint
@@ -160,7 +152,7 @@ void setup() {
       inputParam = "none";
     }
     Serial.println(inputMessage);
-    request->send(200, "text/plain", "HTTP GET request sent to your ESP on input field (" + inputParam + ") with value: " + inputMessage);
+    request->send(200, "text/plain", "HTTP GET /set request sent to your ESP on input field (" + inputParam + ") with value: " + inputMessage);
   });
 
   server.begin();
