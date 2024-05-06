@@ -13,15 +13,14 @@
   <div>
     <button onclick="syncTime()">Sync time</button>
   </div>
+  <div id="abc"></div>
 </body>
 <script>
   const syncTime = () => {
     const utcnow = Math.round(Date.now() / 1000);
 
-    fetch(`/sync&t=${utcnow}`).then(function(response) {
-      return response.json();
-    }).then(function(data) {
-      console.log(data);
+    fetch(`/sync?t=${utcnow}`).then(function(response) {
+      document.querySelector('#abc').textContent = JSON.stringify(response);
     }).catch(function(err) {
       console.log('Fetch Error: ', err);
     });
@@ -30,10 +29,8 @@
   const setReserv = () => {
     const reserv = parseInt(document.querySelector('input#reserv').value);
 
-    fetch(`/set&t=${reserv}`).then(function(response) {
-      return response.json();
-    }).then(function(data) {
-      console.log(data);
+    fetch(`/set?t=${reserv}`).then(function(response) {
+      document.querySelector('#abc').textContent = JSON.stringify(response);
     }).catch(function(err) {
       console.log('Fetch Error: ', err);
     });

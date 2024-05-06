@@ -10,7 +10,7 @@
 #define NEOPIXEL 21
 
 const char index_html[] PROGMEM = R"rawliteral(
-  <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -25,15 +25,14 @@ const char index_html[] PROGMEM = R"rawliteral(
   <div>
     <button onclick="syncTime()">Sync time</button>
   </div>
+  <div id="abc"></div>
 </body>
 <script>
   const syncTime = () => {
     const utcnow = Math.round(Date.now() / 1000);
 
-    fetch(`/sync&t=${utcnow}`).then(function(response) {
-      return response.json();
-    }).then(function(data) {
-      console.log(data);
+    fetch(`/sync?t=${utcnow}`).then(function(response) {
+      document.querySelector('#abc').textContent = JSON.stringify(response);
     }).catch(function(err) {
       console.log('Fetch Error: ', err);
     });
@@ -42,10 +41,8 @@ const char index_html[] PROGMEM = R"rawliteral(
   const setReserv = () => {
     const reserv = parseInt(document.querySelector('input#reserv').value);
 
-    fetch(`/set&t=${reserv}`).then(function(response) {
-      return response.json();
-    }).then(function(data) {
-      console.log(data);
+    fetch(`/set?t=${reserv}`).then(function(response) {
+      document.querySelector('#abc').textContent = JSON.stringify(response);
     }).catch(function(err) {
       console.log('Fetch Error: ', err);
     });
@@ -74,7 +71,7 @@ unsigned long localtimee = starttime;
 
 const short ledcount = 300;
 unsigned long counterstart = 1714998503;
-unsigned long reserv = 1714996200;
+unsigned long reserv = 1715003400;
 unsigned long start_to_reserv_diff = reserv - counterstart;
 
 void time_set(unsigned long time) {
@@ -100,7 +97,7 @@ long led_progress() {
 void setup() {
   Serial.begin(115200);
 
-  time_set(1714998630);
+  time_set(1714999288);
 
   WiFi.mode(WIFI_MODE_APSTA);
   WiFi.softAP(soft_ap_ssid, soft_ap_password);
@@ -128,13 +125,16 @@ void setup() {
   });
 
   // utc epoch time set endpoint
-  server.on("/set", HTTP_GET, [] (AsyncWebServerRequest *request) {
+  server.on("/sync", HTTP_GET, [] (AsyncWebServerRequest *request) {
     String inputMessage;
     String inputParam;
 
     if (request->hasParam("t")) {
       inputMessage = request->getParam("t")->value();
       inputParam ="t";
+      Serial.println("/set api:");
+      Serial.println(inputMessage.c_str());
+      Serial.println(strtoul(inputMessage.c_str(), NULL, 10));
       time_set(strtoul(inputMessage.c_str(), NULL, 10));
     }
     else {
@@ -146,7 +146,7 @@ void setup() {
   });
 
   // reserv deadline set endpoint
-  server.on("/sync", HTTP_GET, [] (AsyncWebServerRequest *request) {
+  server.on("/set", HTTP_GET, [] (AsyncWebServerRequest *request) {
     String inputMessage;
     String inputParam;
 
