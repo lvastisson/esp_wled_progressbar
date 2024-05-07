@@ -1,10 +1,12 @@
 #ifdef ESP32
 #include <WiFi.h>
+#include <HTTPClient.h>
 #else
 #include <ESP8266WiFi.h>
+#include <ESP8266HTTPClient.h>
+#include <WiFiClient.h>
 #endif
 #include "ESPAsyncWebServer.h"
-#include <HTTPClient.h>
 #include <EEPROM.h>
 
 // define the number of bytes you want to access
@@ -329,7 +331,11 @@ void setup() {
 
   counter_load();
 
-  WiFi.mode(WIFI_MODE_APSTA);
+#ifdef ESP32
+  Wifi.mode(WIFI_MODE_APSTA);
+#else
+  WiFi.mode(WIFI_AP_STA);
+#endif
   WiFi.softAP(soft_ap_ssid, soft_ap_password);
   WiFi.begin(wifi_network_ssid, wifi_network_password);
 
@@ -368,7 +374,12 @@ void setup() {
 
       HTTPClient http;
       String wled_sync_path = wled_sync + time_get();
+#ifdef ESP32
       http.begin(wled_sync_path.c_str());
+#else
+      WiFiClient client;
+      http.begin(client, wled_sync_path.c_str());
+#endif
       int httpResponseCode = http.GET();
 
       if (httpResponseCode > 0) {
@@ -445,8 +456,14 @@ void loop() {
       if (currled != curr_progress) {
         // neopixelWrite(NEOPIXEL,0,RGB_BRIGHTNESS,0); // Green
         HTTPClient http;
+        WiFiClient client;
 
+#ifdef ESP32
         http.begin(wled_api.c_str());
+#else
+        WiFiClient client;
+        http.begin(client, wled_api.c_str());
+#endif
         http.addHeader("Content-Type", "application/json");
 
 
