@@ -276,6 +276,7 @@ unsigned long timerDelayMs = 5000;
 
 unsigned long starttime = millis() / 1000;
 unsigned long localtimee = starttime;
+bool syncrequested = false;
 
 const short ledcount = 300;
 short currled = -1;
@@ -373,40 +374,7 @@ void setup() {
       // save the new epoch time to flash
       time_save();
       currled = 0;
-
-      if (WiFi.status() == WL_CONNECTED) {
-  //       String wled_sync_path = wled_sync + String(time_get());
-  //       Serial.println("@@@@@@@@@@@@@@@");
-  //       Serial.println(wled_sync_path2);
-  //       Serial.println("////////////////");
-  //       Serial.println(wled_sync_path);
-  //       Serial.println("---------------");
-  // #ifdef ESP32
-  //       http.begin(wled_sync_path.c_str());
-  // #else
-  //       http.begin(client, wled_sync_path.c_str());
-  //       Serial.println(4);
-  // #endif
-  //       int httpResponseCode = http.GET();
-  //       // int httpResponseCode = -69;
-  //       Serial.println(5);
-
-  //       if (httpResponseCode > 0) {
-  //         Serial.print("(WLED sync) HTTP Response code: ");
-  //         Serial.println(httpResponseCode);
-  //         String payload = http.getString();
-  //         Serial.println(payload);
-  //         Serial.println(6);
-  //       } else {
-  //         Serial.print("(WLED sync) Error code: ");
-  //         Serial.println(httpResponseCode);
-  //         Serial.println(7);
-  //       }
-  //       Serial.println(8);
-  //       http.end();
-      } else {
-        inputMessage = inputMessage + " !!!WLED UPDATE FAILED!!!";
-      }
+      syncrequested = true;
     }
     else {
       inputMessage = "No message sent";
@@ -464,30 +432,22 @@ void setup() {
 
 void syncWledTime() {
   String wled_sync_path = wled_sync + String(time_get());
-  Serial.println("////////////////");
-  Serial.println(wled_sync_path);
-  Serial.println("---------------");
 #ifdef ESP32
   http.begin(wled_sync_path.c_str());
 #else
   http.begin(client, wled_sync_path.c_str());
-  Serial.println(4);
 #endif
   int httpResponseCode = http.GET();
-  Serial.println(5);
 
   if (httpResponseCode > 0) {
     Serial.print("(WLED sync) HTTP Response code: ");
     Serial.println(httpResponseCode);
     String payload = http.getString();
     Serial.println(payload);
-    Serial.println(6);
   } else {
     Serial.print("(WLED sync) Error code: ");
     Serial.println(httpResponseCode);
-    Serial.println(7);
   }
-  Serial.println(8);
   http.end();
 }
 
@@ -495,7 +455,11 @@ void loop() {
 
   if ((millis() - lastTime) > timerDelayMs) {
     if (WiFi.status() == WL_CONNECTED) {
-      syncWledTime();
+      if (syncrequested) {
+        syncWledTime();
+        delay(3000);
+        syncrequested = false;
+      }
       short curr_progress = led_progress();
 
       if (currled != curr_progress) {
