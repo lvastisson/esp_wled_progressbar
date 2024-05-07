@@ -12,6 +12,8 @@
 // define the number of bytes you want to access
 #define EEPROM_SIZE 12
 
+WiFiClient client;
+HTTPClient http;
 
 // #define NEOPIXEL 21
 
@@ -263,7 +265,7 @@ const char* soft_ap_ssid = "reserv counter ui";
 const char* soft_ap_password = "altmaereserv";
 
 String wled_api = "http://4.3.2.1:80/json/state";
-String wled_sync = "http://4.3.2.1:80/win&ST=";
+String wled_sync = "http://4.3.2.1:80/win?ST=";
 
 AsyncWebServer server(80);
 
@@ -372,26 +374,39 @@ void setup() {
       time_save();
       currled = 0;
 
-      HTTPClient http;
-      String wled_sync_path = wled_sync + time_get();
-#ifdef ESP32
-      http.begin(wled_sync_path.c_str());
-#else
-      WiFiClient client;
-      http.begin(client, wled_sync_path.c_str());
-#endif
-      int httpResponseCode = http.GET();
+      if (WiFi.status() == WL_CONNECTED) {
+  //       String wled_sync_path = wled_sync + String(time_get());
+  //       Serial.println("@@@@@@@@@@@@@@@");
+  //       Serial.println(wled_sync_path2);
+  //       Serial.println("////////////////");
+  //       Serial.println(wled_sync_path);
+  //       Serial.println("---------------");
+  // #ifdef ESP32
+  //       http.begin(wled_sync_path.c_str());
+  // #else
+  //       http.begin(client, wled_sync_path.c_str());
+  //       Serial.println(4);
+  // #endif
+  //       int httpResponseCode = http.GET();
+  //       // int httpResponseCode = -69;
+  //       Serial.println(5);
 
-      if (httpResponseCode > 0) {
-        Serial.print("(WLED sync) HTTP Response code: ");
-        Serial.println(httpResponseCode);
-        String payload = http.getString();
-        Serial.println(payload);
+  //       if (httpResponseCode > 0) {
+  //         Serial.print("(WLED sync) HTTP Response code: ");
+  //         Serial.println(httpResponseCode);
+  //         String payload = http.getString();
+  //         Serial.println(payload);
+  //         Serial.println(6);
+  //       } else {
+  //         Serial.print("(WLED sync) Error code: ");
+  //         Serial.println(httpResponseCode);
+  //         Serial.println(7);
+  //       }
+  //       Serial.println(8);
+  //       http.end();
       } else {
-        Serial.print("(WLED sync) Error code: ");
-        Serial.println(httpResponseCode);
+        inputMessage = inputMessage + " !!!WLED UPDATE FAILED!!!";
       }
-      http.end();
     }
     else {
       inputMessage = "No message sent";
@@ -447,21 +462,48 @@ void setup() {
   // neopixelWrite(NEOPIXEL,0,RGB_BRIGHTNESS,0); // Green
 }
 
+void syncWledTime() {
+  String wled_sync_path = wled_sync + String(time_get());
+  Serial.println("////////////////");
+  Serial.println(wled_sync_path);
+  Serial.println("---------------");
+#ifdef ESP32
+  http.begin(wled_sync_path.c_str());
+#else
+  http.begin(client, wled_sync_path.c_str());
+  Serial.println(4);
+#endif
+  int httpResponseCode = http.GET();
+  Serial.println(5);
+
+  if (httpResponseCode > 0) {
+    Serial.print("(WLED sync) HTTP Response code: ");
+    Serial.println(httpResponseCode);
+    String payload = http.getString();
+    Serial.println(payload);
+    Serial.println(6);
+  } else {
+    Serial.print("(WLED sync) Error code: ");
+    Serial.println(httpResponseCode);
+    Serial.println(7);
+  }
+  Serial.println(8);
+  http.end();
+}
+
 void loop() {
 
   if ((millis() - lastTime) > timerDelayMs) {
     if (WiFi.status() == WL_CONNECTED) {
+      syncWledTime();
       short curr_progress = led_progress();
 
       if (currled != curr_progress) {
         // neopixelWrite(NEOPIXEL,0,RGB_BRIGHTNESS,0); // Green
-        HTTPClient http;
-        WiFiClient client;
 
 #ifdef ESP32
         http.begin(wled_api.c_str());
 #else
-        WiFiClient client;
         http.begin(client, wled_api.c_str());
 #endif
         http.addHeader("Content-Type", "application/json");
