@@ -7,8 +7,15 @@
 </head>
 <body>
   <div>
-    <input type="number" name="reserv" id="reserv">
-    <button onclick="setReserv()">Update reserv time</button>
+    <label for="timerstart">Start:</label>
+    <input type="number" name="timerstart" id="timerstart" value="1714510800">
+  </div>
+  <div>
+    <label for="timerend">End:</label>
+    <input type="number" name="timerend" id="timerend" value="1718359200">
+  </div>
+  <div>
+    <button onclick="setReserv()">Update reserv counter start&end time</button>
   </div>
   <div>
     <button onclick="syncTime()">Sync time</button>
@@ -27,9 +34,10 @@
   }
 
   const setReserv = () => {
-    const reserv = parseInt(document.querySelector('input#reserv').value);
+    const timerstart = parseInt(document.querySelector('input#timerstart').value);
+    const timerend = parseInt(document.querySelector('input#timerend').value);
 
-    fetch(`/set?t=${reserv}`).then(function(response) {
+    fetch(`/set?s=${timerstart}&e=${timerend}`).then(function(response) {
       document.querySelector('#abc').textContent = JSON.stringify(response);
     }).catch(function(err) {
       console.log('Fetch Error: ', err);

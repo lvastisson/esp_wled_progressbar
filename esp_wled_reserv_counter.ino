@@ -7,6 +7,13 @@
 #include <HTTPClient.h>
 #include <Arduino_JSON.h>
 
+// include library to read and write from flash memory
+#include <EEPROM.h>
+
+// define the number of bytes you want to access
+#define EEPROM_SIZE 12
+
+
 #define NEOPIXEL 21
 
 const char index_html[] PROGMEM = R"rawliteral(
@@ -19,8 +26,15 @@ const char index_html[] PROGMEM = R"rawliteral(
 </head>
 <body>
   <div>
-    <input type="number" name="reserv" id="reserv">
-    <button onclick="setReserv()">Update reserv time</button>
+    <label for="timerstart">Start:</label>
+    <input type="number" name="timerstart" id="timerstart" value="1714510800">
+  </div>
+  <div>
+    <label for="timerend">End:</label>
+    <input type="number" name="timerend" id="timerend" value="1718359200">
+  </div>
+  <div>
+    <button onclick="setReserv()">Update reserv counter start&end time</button>
   </div>
   <div>
     <button onclick="syncTime()">Sync time</button>
@@ -39,9 +53,10 @@ const char index_html[] PROGMEM = R"rawliteral(
   }
 
   const setReserv = () => {
-    const reserv = parseInt(document.querySelector('input#reserv').value);
+    const timerstart = parseInt(document.querySelector('input#timerstart').value);
+    const timerend = parseInt(document.querySelector('input#timerend').value);
 
-    fetch(`/set?t=${reserv}`).then(function(response) {
+    fetch(`/set?s=${timerstart}&e=${timerend}`).then(function(response) {
       document.querySelector('#abc').textContent = JSON.stringify(response);
     }).catch(function(err) {
       console.log('Fetch Error: ', err);
@@ -50,6 +65,44 @@ const char index_html[] PROGMEM = R"rawliteral(
 </script>
 </html>
 )rawliteral";
+
+// EEPROM funcs ref: https://forum.arduino.cc/t/saving-an-unsigned-long-int-to-internal-eeprom/487205
+unsigned int EEPROM_readint(int address) 
+{
+  unsigned int word = word(EEPROM.read(address), EEPROM.read(address+1));
+  return word;
+}
+
+//write word to EEPROM
+void EEPROM_writeint(int address, int value) 
+{
+  EEPROM.write(address,highByte(value));
+  EEPROM.write(address+1 ,lowByte(value));
+}
+
+// read double word from EEPROM, give starting address
+unsigned long EEPROM_readlong(int address)
+{
+  //use word read function for reading upper part
+  unsigned long dword = EEPROM_readint(address);
+  //shift read word up
+  dword = dword << 16;
+  // read lower word from EEPROM and OR it into double word
+  dword = dword | EEPROM_readint(address+2);
+  return dword;
+}
+
+//write long integer into EEPROM
+void EEPROM_writelong(int address, unsigned long value) 
+{
+  //truncate upper part and write lower part into EEPROM
+  EEPROM_writeint(address+2, word(value));
+  //shift upper part down
+  value = value >> 16;
+  //truncate and write
+  EEPROM_writeint(address, word(value));
+}
+
 
 const char* wifi_network_ssid = "qrf party machine";
 const char* wifi_network_password = "ainidergb";
@@ -65,16 +118,15 @@ AsyncWebServer server(80);
 char buffer[412];
 
 unsigned long lastTime = 0;
-unsigned long timerDelayMs = 3000;
+unsigned long timerDelayMs = 100;
 
 unsigned long starttime = millis() / 1000;
 unsigned long localtimee = starttime;
 
 const short ledcount = 300;
 short currled = -1;
-unsigned long counterstart = 1715059660;
-unsigned long counterend = 1715074200;
-unsigned long start_to_end_diff = counterend - counterstart;
+unsigned long counterstart = 1714510800;
+unsigned long counterend = 1718359200;
 
 void time_set(unsigned long time) {
   starttime = millis() / 1000;
@@ -83,9 +135,24 @@ void time_set(unsigned long time) {
 unsigned long time_get() {
   return (millis() / 1000 - starttime + localtimee);
 }
+void time_save() {
+  EEPROM_writelong(0, time_get());
+  EEPROM.commit();
+}
+
+void counter_save() {
+  EEPROM_writelong(4, counterstart);
+  EEPROM_writelong(8, counterend);
+  EEPROM.commit();
+}
+void counter_load() {
+  counterstart = EEPROM_readlong(4);
+  counterend = EEPROM_readlong(8);
+}
 
 double reservini_progress() {
   double curr_timee = time_get();
+  unsigned long start_to_end_diff = counterend - counterstart;
   return 100 - (((double)counterend - curr_timee) / (double)start_to_end_diff * (double)100);
 }
 long led_progress() {
@@ -94,13 +161,27 @@ long led_progress() {
 
 void setup() {
   Serial.begin(115200);
+  // wait for serial to initialize
+  delay(1000);
 
-  time_set(1715059660);
+  // initialize EEPROM with predefined size
+  EEPROM.begin(EEPROM_SIZE);
+
+  // REQUIRED ON FIRST FLASH
+  // EEPROM_writelong(0, 1715059660);
+  // counter_save();
+  // EEPROM.commit();
+
+  localtimee = EEPROM_readlong(0);
+  Serial.print("Local time loaded from EEPROM: ");
+  Serial.println(localtimee);
+  time_set(localtimee);
+
+  counter_load();
 
   WiFi.mode(WIFI_MODE_APSTA);
   WiFi.softAP(soft_ap_ssid, soft_ap_password);
   WiFi.begin(wifi_network_ssid, wifi_network_password);
-
 
   Serial.println("Connecting to WiFi..");
   while (WiFi.status() != WL_CONNECTED) {
@@ -131,6 +212,9 @@ void setup() {
       inputMessage = request->getParam("t")->value();
       inputParam ="t";
       time_set(strtoul(inputMessage.c_str(), NULL, 10));
+      // save the new epoch time to flash
+      time_save();
+      currled = 0;
 
       HTTPClient http;
       String wled_sync_path = wled_sync + time_get();
@@ -156,23 +240,45 @@ void setup() {
     request->send(200, "text/plain", "HTTP GET /sync request sent to your ESP on input field (" + inputParam + ") with value: " + inputMessage);
   });
 
-  // reserv deadline set endpoint
+  // get counter start/end times & current time endpoint
+  server.on("/get", HTTP_GET, [] (AsyncWebServerRequest *request) {
+    request->send(200, "application/json", "{\"start\":" + String(counterstart) + ",\"end\":" + String(counterend) + ",\"currenttime\":" + String(time_get()) + "}");
+  });
+
+  // set counter start & end times endpoint
   server.on("/set", HTTP_GET, [] (AsyncWebServerRequest *request) {
     String inputMessage;
     String inputParam;
+    String inputMessage2;
+    String inputParam2;
 
-    if (request->hasParam("t")) {
-      inputMessage = request->getParam("t")->value();
-      inputParam ="t";
-      counterend = strtoul(inputMessage.c_str(), NULL, 10);
+    if (request->hasParam("s")) {
+      inputMessage = request->getParam("s")->value();
+      inputParam ="s";
+      counterstart = strtoul(inputMessage.c_str(), NULL, 10);
       currled = 0;
     }
     else {
       inputMessage = "No message sent";
       inputParam = "none";
     }
+
+    if (request->hasParam("e")) {
+      inputMessage2 = request->getParam("e")->value();
+      inputParam2 ="e";
+      counterend = strtoul(inputMessage2.c_str(), NULL, 10);
+      currled = 0;
+    }
+    else {
+      inputMessage = "No message sent";
+      inputParam = "none";
+    }
+
+    // save new counter start/end values to flash
+    counter_save();
+
     Serial.println(inputMessage);
-    request->send(200, "text/plain", "HTTP GET /set request sent to your ESP on input field (" + inputParam + ") with value: " + inputMessage);
+    request->send(200, "text/plain", inputParam + "=" + inputMessage + ";" + inputParam2 + "=" + inputMessage2);
   });
 
   server.begin();
@@ -208,6 +314,11 @@ void loop() {
           Serial.println(httpResponseCode);
           String payload = http.getString();
           Serial.println(payload);
+
+          // save current epoch time to flash
+          time_save();
+
+          // store the led length that was last set
           currled = curr_progress;
         } else {
           Serial.print("Error code: ");
