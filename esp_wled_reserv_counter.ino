@@ -107,8 +107,8 @@ void EEPROM_writelong(int address, unsigned long value)
 const char* wifi_network_ssid = "qrf party machine";
 const char* wifi_network_password = "ainidergb";
 
-const char* soft_ap_ssid = "testif";
-const char* soft_ap_password = "amogus123";
+const char* soft_ap_ssid = "reserv counter ui";
+const char* soft_ap_password = "altmaereserv";
 
 String wled_api = "http://4.3.2.1:80/json/state";
 String wled_sync = "http://4.3.2.1:80/win&ST=";
@@ -118,7 +118,7 @@ AsyncWebServer server(80);
 char buffer[412];
 
 unsigned long lastTime = 0;
-unsigned long timerDelayMs = 100;
+unsigned long timerDelayMs = 5000;
 
 unsigned long starttime = millis() / 1000;
 unsigned long localtimee = starttime;
@@ -156,7 +156,7 @@ double reservini_progress() {
   return 100 - (((double)counterend - curr_timee) / (double)start_to_end_diff * (double)100);
 }
 long led_progress() {
-  return (long)((double)(reservini_progress() * (double)ledcount) / (double)100);
+  return constrain((long)((double)(reservini_progress() * (double)ledcount) / (double)100), 0, ledcount - 1);
 }
 
 void setup() {
@@ -185,9 +185,9 @@ void setup() {
 
   Serial.println("Connecting to WiFi..");
   while (WiFi.status() != WL_CONNECTED) {
-    neopixelWrite(NEOPIXEL,0,0,RGB_BRIGHTNESS); // Blue
+    neopixelWrite(NEOPIXEL, 0, 0, RGB_BRIGHTNESS); // Blue
     delay(250);
-    neopixelWrite(NEOPIXEL,0,0,0); // Off / black
+    neopixelWrite(NEOPIXEL, 0, 0, 0); // Off / black
     delay(250);
     Serial.print(".");
   }
