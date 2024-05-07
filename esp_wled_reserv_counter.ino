@@ -14,7 +14,7 @@
 #define EEPROM_SIZE 12
 
 
-#define NEOPIXEL 21
+// #define NEOPIXEL 21
 
 const char index_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE html>
@@ -338,9 +338,9 @@ void setup() {
 
   Serial.println("Connecting to WiFi..");
   while (WiFi.status() != WL_CONNECTED) {
-    neopixelWrite(NEOPIXEL, 0, 0, RGB_BRIGHTNESS); // Blue
+    // neopixelWrite(NEOPIXEL, 0, 0, RGB_BRIGHTNESS); // Blue
     delay(250);
-    neopixelWrite(NEOPIXEL, 0, 0, 0); // Off / black
+    // neopixelWrite(NEOPIXEL, 0, 0, 0); // Off / black
     delay(250);
     Serial.print(".");
   }
@@ -436,7 +436,7 @@ void setup() {
 
   server.begin();
 
-  neopixelWrite(NEOPIXEL,0,RGB_BRIGHTNESS,0); // Green
+  // neopixelWrite(NEOPIXEL,0,RGB_BRIGHTNESS,0); // Green
 }
 
 void loop() {
@@ -446,7 +446,7 @@ void loop() {
       short curr_progress = led_progress();
 
       if (currled != curr_progress) {
-        neopixelWrite(NEOPIXEL,0,RGB_BRIGHTNESS,0); // Green
+        // neopixelWrite(NEOPIXEL,0,RGB_BRIGHTNESS,0); // Green
         HTTPClient http;
 
         http.begin(wled_api.c_str());
@@ -482,7 +482,7 @@ void loop() {
         http.end();
       }
     } else {
-      neopixelWrite(NEOPIXEL,138,70,170); // Purple
+      // neopixelWrite(NEOPIXEL,138,70,170); // Purple
       Serial.println("Reconnecting to WiFi...");
       WiFi.disconnect();
       delay(500);
