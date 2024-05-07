@@ -3,45 +3,198 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
+  <title>Reservi Counter UI</title>
+  <style>
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+
+      width: 100vw;
+      height: 100vh;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    button {
+      border: none;
+      border-radius: 8px;
+      padding: 8px 16px;
+      background-color: rgb(14, 14, 171);
+      color: white;
+    }
+
+    button:hover {
+      background-color: rgb(43, 43, 113);
+      cursor: pointer;
+    }
+
+    .container {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .sync {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .log {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      overflow-y: scroll;
+      height: 20vh;
+      width: 100vw;
+      color: rgb(236, 236, 236);
+    }
+
+    .alert {
+      -webkit-animation: blink 1s infinite;
+      -moz-animation: blink 1s infinite;
+      -o-animation: blink 1s infinite;
+      animation: blink 1s infinite;
+    }
+
+    .green {
+      color: green;
+    }
+
+    .red {
+      color: red;
+    }
+
+    @-webkit-keyframes blink {
+      0%,
+      49% {
+        background-color: #c4d625;
+      }
+
+      50%,
+      100% {
+        background-color: #e50000;
+      }
+    }
+  </style>
 </head>
+
 <body>
-  <div>
-    <label for="timerstart">Start:</label>
-    <input type="number" name="timerstart" id="timerstart" value="1714510800">
+  <div class="container">
+    <div class="timer">
+      <div>
+        <label for="timerstart">Start:</label>
+        <!-- <input type="number" name="timerstart" id="timerstart" value="1714510800"> -->
+        <input type="datetime-local" name="timerstart" id="timerstart">
+      </div>
+      <div>
+        <label for="timerend">End:</label>
+        <!-- <input type="number" name="timerend" id="timerend" value="1718359200"> -->
+        <input type="datetime-local" name="timerend" id="timerend">
+      </div>
+      <div>
+        <button onclick="setReserv()">Update reserv counter start & end time</button>
+      </div>
+    </div>
+    <div class="sync">
+      <div id="syncstatus" class="green">time diff (esp32 - local): </div>
+      <button id="syncbtn" onclick="syncTime()">Sync time</button>
+    </div>
+    <div class="log">
+      <div>Debug log:</div>
+      <div id="log"></div>
+    </div>
   </div>
-  <div>
-    <label for="timerend">End:</label>
-    <input type="number" name="timerend" id="timerend" value="1718359200">
-  </div>
-  <div>
-    <button onclick="setReserv()">Update reserv counter start&end time</button>
-  </div>
-  <div>
-    <button onclick="syncTime()">Sync time</button>
-  </div>
-  <div id="abc"></div>
 </body>
 <script>
+  let data;
+
+  const logHtmlEl = document.querySelector('#log');
+  const timerStartEl = document.querySelector('input#timerstart');
+  const timerEndEl = document.querySelector('input#timerend');
+  const syncTextEl = document.querySelector('#syncstatus');
+  const syncBtnEl = document.querySelector('#syncbtn');
+
+  // W chatgpt, google literally only gave results using jQuery
+  function unixTimeToDateTimeLocal(unixTime) {
+    const date = new Date(unixTime * 1000);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const dateTimeString = `${year}-${month}-${day}T${hours}:${minutes}`;
+    return dateTimeString;
+  }
+
+  function dateTimeLocalToUnixTime(dateTime) {
+    return Math.round(parseInt(new Date(dateTime).getTime()) / 1000);
+  }
+
+  const logToHtml = async (raw) => {
+    console.log(raw);
+    let elem = document.createElement('div');
+    if (raw.text) {
+      let text = await raw.text();
+      elem.innerText = `[${raw.status}] ${text}`;
+    } else {
+      elem.innerText = `[raw] ${raw}`;
+    }
+    logHtmlEl.appendChild(elem);
+  }
+
   const syncTime = () => {
     const utcnow = Math.round(Date.now() / 1000);
 
-    fetch(`/sync?t=${utcnow}`).then(function(response) {
-      document.querySelector('#abc').textContent = JSON.stringify(response);
-    }).catch(function(err) {
-      console.log('Fetch Error: ', err);
+    fetch(`/sync?t=${utcnow}`).then(async function (response) {
+      logToHtml(response);
+      syncBtnEl.className = "";
+      syncTextEl.className = "green";
+      getData();
+    }).catch(function (err) {
+      logToHtml('Fetch Error: ' + err);
     });
   }
 
   const setReserv = () => {
-    const timerstart = parseInt(document.querySelector('input#timerstart').value);
-    const timerend = parseInt(document.querySelector('input#timerend').value);
+    const timerstart = dateTimeLocalToUnixTime(timerStartEl.value);
+    const timerend = dateTimeLocalToUnixTime(timerEndEl.value);
 
-    fetch(`/set?s=${timerstart}&e=${timerend}`).then(function(response) {
-      document.querySelector('#abc').textContent = JSON.stringify(response);
-    }).catch(function(err) {
-      console.log('Fetch Error: ', err);
+    fetch(`/set?s=${timerstart}&e=${timerend}`).then(async function (response) {
+      logToHtml(response);
+      getData();
+    }).catch(function (err) {
+      logToHtml('Fetch Error: ' + err);
     });
   }
+
+  const updateDisplay = () => {
+    timerStartEl.value = unixTimeToDateTimeLocal(data.start);
+    timerEndEl.value = unixTimeToDateTimeLocal(data.end);
+
+    const syncDiff = parseInt(data.currenttime) - Math.round(Date.now() / 1000);
+    if (Math.abs(syncDiff) > 10) {
+      syncBtnEl.className = "alert";
+      syncTextEl.className = "red";
+    }
+
+    syncTextEl.innerText = 'time diff (esp32 - local): ' + syncDiff;
+  }
+
+  const getData = () => {
+    fetch(`/get`).then(async function (response) {
+      let rawResponse = await response.text();
+      logToHtml(rawResponse);
+      data = await JSON.parse(rawResponse);
+      updateDisplay();
+    }).catch(function (err) {
+      logToHtml('Fetch Error: ' + err);
+    });
+  }
+
+  getData();
 </script>
 </html>
