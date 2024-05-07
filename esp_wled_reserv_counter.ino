@@ -5,9 +5,6 @@
 #endif
 #include "ESPAsyncWebServer.h"
 #include <HTTPClient.h>
-#include <Arduino_JSON.h>
-
-// include library to read and write from flash memory
 #include <EEPROM.h>
 
 // define the number of bytes you want to access
