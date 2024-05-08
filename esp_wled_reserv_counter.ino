@@ -265,11 +265,11 @@ void EEPROM_writelong(int address, unsigned long value)
 }
 
 
-const char* wifi_network_ssid = "qrf party machine";
-const char* wifi_network_password = "ainidergb";
+const char* wifi_network_ssid = "WLED_SSID_HERE";
+const char* wifi_network_password = "WLED_PASSWORD_HERE";
 
-const char* soft_ap_ssid = "reserv counter ui";
-const char* soft_ap_password = "altmaereserv";
+const char* soft_ap_ssid = "wled progerssbar ui";
+const char* soft_ap_password = "YOURPASSWORDHERE";
 
 String wled_api = "http://4.3.2.1:80/json/state";
 String wled_sync = "http://4.3.2.1:80/win?ST=";
