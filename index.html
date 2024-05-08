@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Reservi Counter UI</title>
+  <title>WLED Progressbar</title>
   <style>
     body {
       font-family: Arial, Helvetica, sans-serif;
@@ -102,7 +102,7 @@
         <input type="datetime-local" name="timerend" id="timerend">
       </div>
       <div>
-        <button onclick="setReserv()">Update reserv counter start & end time</button>
+        <button onclick="setTimer()">Update counter start & end time</button>
       </div>
     </div>
     <div class="sync">
@@ -165,7 +165,7 @@
     });
   }
 
-  const setReserv = () => {
+  const setTimer = () => {
     const timerstart = dateTimeLocalToUnixTime(timerStartEl.value);
     const timerend = dateTimeLocalToUnixTime(timerEndEl.value);
 
