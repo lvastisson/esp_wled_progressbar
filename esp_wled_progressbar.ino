@@ -288,8 +288,8 @@ bool syncrequested = false;
 
 const short ledcount = 300;
 short currled = -1;
-unsigned long counterstart = 1714510800;
-unsigned long counterend = 1718359200;
+unsigned long counterstart = 0;
+unsigned long counterend = 0;
 
 void time_set(unsigned long time) {
   starttime = millis() / 1000;
@@ -330,7 +330,7 @@ void setup() {
   // initialize EEPROM with predefined size
   EEPROM.begin(EEPROM_SIZE);
 
-  // REQUIRED ON FIRST FLASH
+  // MIGHT BE REQUIRED ON FIRST FLASH IF WEBUI FAILS TO WORK AT FIRST
   // EEPROM_writelong(0, 1715059660);
   // counter_save();
   // EEPROM.commit();
