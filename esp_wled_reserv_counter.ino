@@ -271,6 +271,7 @@ const char* wifi_network_password = "WLED_PASSWORD_HERE";
 const char* soft_ap_ssid = "wled progerssbar ui";
 const char* soft_ap_password = "YOURPASSWORDHERE";
 
+// CHANGEME - wled urls
 String wled_api = "http://4.3.2.1:80/json/state";
 String wled_sync = "http://4.3.2.1:80/win?ST=";
 
