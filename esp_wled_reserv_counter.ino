@@ -7,6 +7,7 @@
 #include <WiFiClient.h>
 #endif
 #include "ESPAsyncWebServer.h"
+#include <AsyncElegantOTA.h>
 #include <EEPROM.h>
 
 // define the number of bytes you want to access
@@ -425,6 +426,7 @@ void setup() {
     request->send(200, "text/plain", inputParam + "=" + inputMessage + ";" + inputParam2 + "=" + inputMessage2);
   });
 
+  AsyncElegantOTA.begin(&server);
   server.begin();
 
   // neopixelWrite(NEOPIXEL,0,RGB_BRIGHTNESS,0); // Green
