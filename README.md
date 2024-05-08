@@ -3,7 +3,7 @@
 <img src="https://raw.githubusercontent.com/lvastisson/esp_wled_progressbar/master/webui.png" alt="web ui of the app" height="120"/>
 <img src="https://raw.githubusercontent.com/lvastisson/esp_wled_progressbar/master/wled_progressbar.gif" alt="demonstration in use using wled app peek function" height="=120"/>
 
-This is a basic esp32/esp8266 program that provides configurable progressbar functionality for WLED software through it's API.
+This is a basic esp32/esp8266 program that provides configurable progressbar functionality for [WLED](https://github.com/Aircoookie/WLED) software through it's API.
 The code is by no means perfect and not tested in it's entirety.
 
 ## Features
