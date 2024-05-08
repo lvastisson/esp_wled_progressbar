@@ -74,6 +74,12 @@ const char index_html[] PROGMEM = R"rawliteral(
       color: rgb(236, 236, 236);
     }
 
+    .timer {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
     .alert {
       -webkit-animation: blink 1s infinite;
       -moz-animation: blink 1s infinite;
