@@ -516,6 +516,7 @@ void loop() {
       WiFi.disconnect();
       delay(500);
       WiFi.reconnect();
+      delay(15000);
     }
 
     lastTime = millis();
