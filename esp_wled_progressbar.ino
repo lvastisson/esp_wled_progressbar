@@ -514,9 +514,12 @@ void loop() {
       // neopixelWrite(NEOPIXEL,138,70,170); // Purple
       Serial.println("Reconnecting to WiFi...");
       WiFi.disconnect();
-      delay(500);
+      delay(5000);
       WiFi.reconnect();
-      delay(15000);
+      while (WiFi.status() != WL_CONNECTED) {
+        delay(1000);
+        Serial.print(".");
+      }
     }
 
     lastTime = millis();
